@@ -11,7 +11,7 @@
   waitForConfig(initChatWidget);
 
   function initChatWidget(config) {
-    // Create the widget container
+    // Create widget container
     const widgetContainer = document.createElement('div');
     widgetContainer.className = 'n8n-chat-widget';
     widgetContainer.style.position = 'fixed';
@@ -39,7 +39,7 @@
       </svg>
     `;
 
-    // Chat window container
+    // Chat window
     const chatWindow = document.createElement('div');
     chatWindow.style.width = '380px';
     chatWindow.style.height = '520px';
@@ -56,9 +56,15 @@
     header.style.borderBottom = '1px solid #eee';
     header.style.display = 'flex';
     header.style.alignItems = 'center';
-    header.style.gap = '12px';
+    header.style.justifyContent = 'space-between';
 
-    header.innerHTML = `
+    // Left side: logo + name
+    const headLeft = document.createElement('div');
+    headLeft.style.display = 'flex';
+    headLeft.style.alignItems = 'center';
+    headLeft.style.gap = '12px';
+
+    headLeft.innerHTML = `
       <img src="${config.branding.logo}" style="width:42px;height:42px;border-radius:8px;">
       <div style="display:flex;flex-direction:column;">
         <span class="chatbot-header-title">${config.branding.name}</span>
@@ -66,7 +72,25 @@
       </div>
     `;
 
-    // Messages container
+    // Close (X) button
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'chatbot-close-btn';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.style.background = 'transparent';
+    closeBtn.style.border = 'none';
+    closeBtn.style.color = config.style.primaryColor;
+    closeBtn.style.fontSize = '26px';
+    closeBtn.style.fontWeight = '600';
+    closeBtn.style.cursor = 'pointer';
+    closeBtn.style.marginRight = '4px';
+    closeBtn.onclick = () => {
+      chatWindow.style.display = 'none';
+    };
+
+    header.appendChild(headLeft);
+    header.appendChild(closeBtn);
+
+    // Messages area
     const messagesDiv = document.createElement('div');
     messagesDiv.style.flex = '1';
     messagesDiv.style.padding = '16px';
@@ -80,7 +104,7 @@
 
     const input = document.createElement('input');
     input.type = 'text';
-    input.placeholder = 'Type a message...';
+    input.placeholder = 'Type your message here...';
     input.style.flex = '1';
     input.style.padding = '12px';
     input.style.borderRadius = '12px';
@@ -98,7 +122,6 @@
     inputWrapper.appendChild(input);
     inputWrapper.appendChild(sendBtn);
 
-    // Append elements
     chatWindow.appendChild(header);
     chatWindow.appendChild(messagesDiv);
     chatWindow.appendChild(inputWrapper);
@@ -106,7 +129,7 @@
     widgetContainer.appendChild(chatWindow);
     document.body.appendChild(widgetContainer);
 
-    // Handle open/close
+    // Open window
     chatButton.addEventListener('click', () => {
       chatWindow.style.display = chatWindow.style.display === 'none' ? 'flex' : 'none';
     });
@@ -117,12 +140,11 @@
       msg.className = isBot ? 'chatbot-bot-message' : 'chatbot-user-message';
       msg.style.marginBottom = '12px';
       msg.innerHTML = text.replace(/\n/g, '<br>');
-
       messagesDiv.appendChild(msg);
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
-    // Send message to webhook
+    // Send message
     async function sendMessage() {
       const text = input.value.trim();
       if (!text) return;
@@ -152,7 +174,7 @@
       if (e.key === 'Enter') sendMessage();
     });
 
-    // Show welcome message
+    // Welcome message
     addMessage(config.branding.welcomeText, true);
   }
 })();
