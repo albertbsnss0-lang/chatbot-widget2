@@ -215,9 +215,18 @@
     styleSheet.textContent = styles;
     document.head.appendChild(styleSheet);
 
+    // Default configuration
     const defaultConfig = {
-        webhook: { url: '', route: '' },
-        branding: { logo: '', name: '', welcomeText: '', responseTimeText: '' },
+        webhook: {
+            url: '',
+            route: ''
+        },
+        branding: {
+            logo: '',
+            name: '',
+            welcomeText: '',
+            responseTimeText: ''
+        },
         style: {
             primaryColor: '',
             secondaryColor: '',
@@ -227,7 +236,8 @@
         }
     };
 
-    const config = window.ChatWidgetConfig ?
+    // Merge with user config
+    const config = window.ChatWidgetConfig ? 
         {
             webhook: { ...defaultConfig.webhook, ...window.ChatWidgetConfig.webhook },
             branding: { ...defaultConfig.branding, ...window.ChatWidgetConfig.branding },
@@ -239,6 +249,7 @@
 
     let currentSessionId = '';
 
+    // Create widget container
     const widgetContainer = document.createElement('div');
     widgetContainer.className = 'n8n-chat-widget';
 
@@ -250,7 +261,7 @@
     const chatContainer = document.createElement('div');
     chatContainer.className = `chat-container${config.style.position === 'left' ? ' position-left' : ''}`;
 
-    chatContainer.innerHTML = `
+    const newConversationHTML = `
         <div class="brand-header">
             <img src="${config.branding.logo}" alt="${config.branding.name}">
             <span>${config.branding.name}</span>
@@ -258,12 +269,20 @@
         </div>
         <div class="new-conversation">
             <h2 class="welcome-text">${config.branding.welcomeText}</h2>
-            <button class="new-chat-btn">Send us a message</button>
+            <button class="new-chat-btn">
+                <svg class="message-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/>
+                </svg>
+                Send us a message
+            </button>
             <p class="response-text">${config.branding.responseTimeText}</p>
         </div>
+    `;
+
+    const chatInterfaceHTML = `
         <div class="chat-interface">
             <div class="brand-header">
-                <img src="${config.branding.logo}">
+                <img src="${config.branding.logo}" alt="${config.branding.name}">
                 <span>${config.branding.name}</span>
                 <button class="close-button">×</button>
             </div>
@@ -272,12 +291,19 @@
                 <textarea placeholder="Type your message here..." rows="1"></textarea>
                 <button type="submit">Send</button>
             </div>
+            <div class="chat-footer"><!-- removed --></div>
         </div>
     `;
 
+    chatContainer.innerHTML = newConversationHTML + chatInterfaceHTML;
+
     const toggleButton = document.createElement('button');
-    toggleButton.className = 'chat-toggle';
-    toggleButton.textContent = '💬';
+    toggleButton.className = `chat-toggle${config.style.position === 'left' ? ' position-left' : ''}`;
+    toggleButton.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M12 2C6.477 2 2 6.477 2 12c0 1.821.487 3.53 1.338 5L2.5 21.5l4.5-.838A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/>
+        </svg>
+    `;
 
     widgetContainer.appendChild(chatContainer);
     widgetContainer.appendChild(toggleButton);
@@ -289,57 +315,103 @@
     const textarea = chatContainer.querySelector('textarea');
     const sendButton = chatContainer.querySelector('button[type="submit"]');
 
-    function scrollToBottom() {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
     function generateUUID() {
         return crypto.randomUUID();
     }
 
     async function startNewConversation() {
         currentSessionId = generateUUID();
-        chatInterface.classList.add('active');
+        const data = [{
+            action: "loadPreviousSession",
+            sessionId: currentSessionId,
+            route: config.webhook.route,
+            metadata: { userId: "" }
+        }];
 
-        const bot = document.createElement('div');
-        bot.className = 'chat-message bot';
-        bot.textContent = config.branding.welcomeText;
-        messagesContainer.appendChild(bot);
-        scrollToBottom();
+        try {
+            const response = await fetch(config.webhook.url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const responseData = await response.json();
+            chatContainer.querySelector('.brand-header').style.display = 'none';
+            chatContainer.querySelector('.new-conversation').style.display = 'none';
+            chatInterface.classList.add('active');
+
+            const bot = document.createElement('div');
+            bot.className = 'chat-message bot';
+            bot.textContent = Array.isArray(responseData) ? responseData[0].output : responseData.output;
+            messagesContainer.appendChild(bot);
+
+        } catch (error) {
+            console.error('Error:', error);
+        }
     }
 
     async function sendMessage(message) {
+        const messageData = {
+            action: "sendMessage",
+            sessionId: currentSessionId,
+            route: config.webhook.route,
+            chatInput: message,
+            metadata: { userId: "" }
+        };
+
         const userMsg = document.createElement('div');
         userMsg.className = 'chat-message user';
         userMsg.textContent = message;
         messagesContainer.appendChild(userMsg);
-        scrollToBottom();
 
-        const bot = document.createElement('div');
-        bot.className = 'chat-message bot';
-        bot.textContent = '...';
-        messagesContainer.appendChild(bot);
-        scrollToBottom();
+        try {
+            const response = await fetch(config.webhook.url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(messageData)
+            });
+
+            const data = await response.json();
+
+            const bot = document.createElement('div');
+            bot.className = 'chat-message bot';
+            bot.textContent = Array.isArray(data) ? data[0].output : data.output;
+            messagesContainer.appendChild(bot);
+
+        } catch (error) {
+            console.error('Error:', error);
+        }
     }
 
     newChatBtn.addEventListener('click', startNewConversation);
 
     sendButton.addEventListener('click', () => {
-        if (textarea.value.trim()) {
-            sendMessage(textarea.value.trim());
+        const message = textarea.value.trim();
+        if (message) {
+            sendMessage(message);
             textarea.value = '';
         }
     });
 
-    textarea.addEventListener('keypress', e => {
+    textarea.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            sendButton.click();
+            const message = textarea.value.trim();
+            if (message) {
+                sendMessage(message);
+                textarea.value = '';
+            }
         }
     });
 
     toggleButton.addEventListener('click', () => {
         chatContainer.classList.toggle('open');
     });
+
+    document.querySelectorAll('.close-button').forEach(btn =>
+        btn.addEventListener('click', () =>
+            chatContainer.classList.remove('open')
+        )
+    );
 
 })();
