@@ -241,6 +241,17 @@
     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
+/* Ensure launcher is always clickable */
+.n8n-chat-widget .chat-toggle {
+    pointer-events: auto;
+}
+
+/* Badge must NOT block clicks */
+.n8n-chat-widget .launcher-badge {
+    pointer-events: none;
+}
+
+
     `;
 
     // Load font
@@ -457,5 +468,6 @@ toggleButton.innerHTML = `
     );
 
 })();
+
 
 
