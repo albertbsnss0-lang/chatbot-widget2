@@ -1,14 +1,7 @@
-// iClean AZ custom chat widget script (auto‑scroll fix version)
-// This script updates the previous final version by ensuring the chat window
-// always scrolls to the latest message and keeps the launcher anchored
-// bottom‑right with higher CSS specificity. All other features from the
-// final version remain unchanged.
+// iClean AZ custom chat widget script (hide toggle on open)
+// This script builds on the auto‑scroll version by adding a CSS rule to
+// automatically hide the “Get a Free Quote” launcher when the chat window is open.
 (function () {
-  /*
-   * This script customises the default n8n chat widget to match the iClean AZ brand.
-   * It incorporates all requested design changes and fixes auto‑scrolling.
-   */
-
   const styles = `
     .n8n-chat-widget {
       --chat--color-primary: var(--n8n-chat-primary-color, #0B1F3B);
@@ -17,14 +10,16 @@
       --chat--color-font: var(--n8n-chat-font-color, #0B1F3B);
       font-family: 'Poppins', sans-serif;
     }
-
-    /* Keyframes for subtle pulse animation on the launcher */
+    /* Pulse animation for the launcher */
     @keyframes launcherPulse {
-      0%   { box-shadow: 0 10px 30px rgba(11, 31, 59, 0.35); }
-      50%  { box-shadow: 0 12px 36px rgba(11, 31, 59, 0.45); transform: translateY(-1px); }
+      0% { box-shadow: 0 10px 30px rgba(11, 31, 59, 0.35); }
+      50% { box-shadow: 0 12px 36px rgba(11, 31, 59, 0.45); transform: translateY(-1px); }
       100% { box-shadow: 0 10px 30px rgba(11, 31, 59, 0.35); }
     }
-
+    /* Hide the launcher when the chat container is open */
+    .n8n-chat-widget .chat-container.open + .chat-toggle {
+      display: none !important;
+    }
     /* Chat container */
     .n8n-chat-widget .chat-container {
       position: fixed;
@@ -61,7 +56,6 @@
         border-radius: 0;
       }
     }
-
     /* Header */
     .n8n-chat-widget .brand-header {
       padding: 16px;
@@ -110,7 +104,6 @@
     .n8n-chat-widget .close-button:hover {
       opacity: 1;
     }
-
     /* New conversation screen */
     .n8n-chat-widget .new-conversation {
       position: absolute;
@@ -148,7 +141,6 @@
       width: 20px;
       height: 20px;
     }
-
     /* Chat interface */
     .n8n-chat-widget .chat-interface {
       display: none;
@@ -186,7 +178,6 @@
       color: var(--chat--color-font);
       align-self: flex-start;
     }
-    /* Quick reply chips within bot messages */
     .n8n-chat-widget .chat-message.bot button {
       background: #F3F5F7;
       border: 1px solid #D9DEE5;
@@ -223,12 +214,11 @@
       cursor: pointer;
       font-size: 14px;
     }
-
-    /* Launcher button */
+    /* Launcher */
     .n8n-chat-widget .chat-toggle {
-      position: fixed !important;
-      bottom: 20px !important;
-      right: 20px !important;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
       height: 60px;
       padding: 0 24px;
       border-radius: 999px;
@@ -246,8 +236,8 @@
     }
     @media (max-width: 600px) {
       .n8n-chat-widget .chat-toggle {
-        bottom: 20px !important;
-        right: 20px !important;
+        bottom: 20px;
+        right: 20px;
         height: 56px;
         padding: 0 20px;
       }
@@ -283,50 +273,29 @@
   fontLink.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap';
   document.head.appendChild(fontLink);
 
-  // Inject styles into document
-  const styleSheet = document.createElement('style');
-  styleSheet.textContent = styles;
-  document.head.appendChild(styleSheet);
+  // Append CSS rules to document
+  const styleEl = document.createElement('style');
+  styleEl.textContent = styles;
+  document.head.appendChild(styleEl);
 
-  // Default configuration; can be overridden by window.ChatWidgetConfig
+  // Default config
   const defaultConfig = {
-    webhook: {
-      url: '',
-      route: ''
-    },
-    branding: {
-      logo: '',
-      name: '',
-      title: '',
-      subtitle: '',
-      welcomeText: '',
-      responseTimeText: ''
-    },
-    style: {
-      primaryColor: '#0B1F3B',
-      secondaryColor: '#0B1F3B',
-      position: 'right',
-      backgroundColor: '#FFFFFF',
-      fontColor: '#0B1F3B'
-    }
+    webhook: { url: '', route: '' },
+    branding: { logo: '', name: '', title: '', subtitle: '', welcomeText: '', responseTimeText: '' },
+    style: { primaryColor: '#0B1F3B', secondaryColor: '#0B1F3B', position: 'right', backgroundColor: '#FFFFFF', fontColor: '#0B1F3B' }
   };
 
-  // Merge user-provided config with defaults
-  const config = window.ChatWidgetConfig
-    ? {
-        webhook: { ...defaultConfig.webhook, ...window.ChatWidgetConfig.webhook },
-        branding: { ...defaultConfig.branding, ...window.ChatWidgetConfig.branding },
-        style: { ...defaultConfig.style, ...window.ChatWidgetConfig.style }
-      }
-    : defaultConfig;
+  const config = window.ChatWidgetConfig ? {
+    webhook: { ...defaultConfig.webhook, ...window.ChatWidgetConfig.webhook },
+    branding: { ...defaultConfig.branding, ...window.ChatWidgetConfig.branding },
+    style: { ...defaultConfig.style, ...window.ChatWidgetConfig.style }
+  } : defaultConfig;
 
-  // Avoid multiple initialisations
   if (window.N8NChatWidgetInitialized) return;
   window.N8NChatWidgetInitialized = true;
 
   let currentSessionId = '';
 
-  // Create the root widget container and set CSS variables
   const widgetContainer = document.createElement('div');
   widgetContainer.className = 'n8n-chat-widget';
   widgetContainer.style.setProperty('--n8n-chat-primary-color', config.style.primaryColor);
@@ -334,11 +303,9 @@
   widgetContainer.style.setProperty('--n8n-chat-background-color', config.style.backgroundColor);
   widgetContainer.style.setProperty('--n8n-chat-font-color', config.style.fontColor);
 
-  // Create chat container element
   const chatContainer = document.createElement('div');
   chatContainer.className = `chat-container${config.style.position === 'left' ? ' position-left' : ''}`;
 
-  // Build markup for the new conversation screen
   const newConversationHTML = `
     <div class="brand-header">
       <img src="${config.branding.logo}" alt="${config.branding.name}">
@@ -360,7 +327,6 @@
     </div>
   `;
 
-  // Build markup for the active chat interface
   const chatInterfaceHTML = `
     <div class="chat-interface">
       <div class="brand-header">
@@ -379,11 +345,8 @@
       <div class="chat-footer"></div>
     </div>
   `;
-
-  // Assemble chat container markup
   chatContainer.innerHTML = newConversationHTML + chatInterfaceHTML;
 
-  // Create launcher toggle button with icon, text, and badge
   const toggleButton = document.createElement('button');
   toggleButton.className = `chat-toggle${config.style.position === 'left' ? ' position-left' : ''}`;
   toggleButton.innerHTML = `
@@ -394,29 +357,24 @@
     <span class="launcher-text">Get a Free Quote</span>
   `;
 
-  // Append chat container and toggle button to widget container and then to body
   widgetContainer.appendChild(chatContainer);
   widgetContainer.appendChild(toggleButton);
   document.body.appendChild(widgetContainer);
 
-  // Capture references to dynamic elements
   const newChatBtn = chatContainer.querySelector('.new-chat-btn');
   const chatInterface = chatContainer.querySelector('.chat-interface');
   const messagesContainer = chatContainer.querySelector('.chat-messages');
   const textarea = chatContainer.querySelector('textarea');
   const sendButton = chatContainer.querySelector('button[type="submit"]');
 
-  // Generate a UUID for new sessions
   function generateUUID() {
     return crypto.randomUUID();
   }
 
-  // Helper: scroll messages container to bottom
   function scrollToBottom() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
 
-  // Helper: show typing indicator
   function showTyping() {
     const typing = document.createElement('div');
     typing.className = 'chat-message bot typing';
@@ -426,13 +384,11 @@
     return typing;
   }
 
-  // Observe message container for new messages and auto-scroll on change
   const observer = new MutationObserver(() => {
     scrollToBottom();
   });
   observer.observe(messagesContainer, { childList: true });
 
-  // Start a new conversation: call the webhook and display first message
   async function startNewConversation() {
     currentSessionId = generateUUID();
     const payload = [
@@ -450,13 +406,9 @@
         body: JSON.stringify(payload)
       });
       const responseData = await response.json();
-      // Transition UI to active chat
       chatContainer.querySelector('.brand-header').style.display = 'none';
       chatContainer.querySelector('.new-conversation').style.display = 'none';
       chatInterface.classList.add('active');
-      // Hide the launcher toggle once the chat is open to prevent overlap
-      toggleButton.style.display = 'none';
-      // Display initial bot message
       const botMsg = document.createElement('div');
       botMsg.className = 'chat-message bot';
       botMsg.textContent = Array.isArray(responseData) ? responseData[0].output : responseData.output;
@@ -467,7 +419,6 @@
     }
   }
 
-  // Send a message and display bot response
   async function sendMessage(message) {
     const payload = {
       action: 'sendMessage',
@@ -476,13 +427,11 @@
       chatInput: message,
       metadata: { userId: '' }
     };
-    // Display user message
     const userMsg = document.createElement('div');
     userMsg.className = 'chat-message user';
     userMsg.textContent = message;
     messagesContainer.appendChild(userMsg);
     scrollToBottom();
-    // Show typing indicator
     const typingIndicator = showTyping();
     try {
       const response = await fetch(config.webhook.url, {
@@ -491,9 +440,7 @@
         body: JSON.stringify(payload)
       });
       const data = await response.json();
-      // Remove typing indicator
       messagesContainer.removeChild(typingIndicator);
-      // Display bot message
       const botMsg = document.createElement('div');
       botMsg.className = 'chat-message bot';
       botMsg.textContent = Array.isArray(data) ? data[0].output : data.output;
@@ -501,14 +448,12 @@
       scrollToBottom();
     } catch (err) {
       console.error('Error sending message:', err);
-      // Remove typing if still present
       if (typingIndicator.parentElement) {
         messagesContainer.removeChild(typingIndicator);
       }
     }
   }
 
-  // Event listeners
   newChatBtn.addEventListener('click', startNewConversation);
   sendButton.addEventListener('click', () => {
     const message = textarea.value.trim();
@@ -528,21 +473,11 @@
     }
   });
   toggleButton.addEventListener('click', () => {
-    // Toggle the chat container open/close
     chatContainer.classList.toggle('open');
-    // Hide the launcher button when the chat is open so it doesn't overlap the chat interface
-    if (chatContainer.classList.contains('open')) {
-      toggleButton.style.display = 'none';
-    } else {
-      toggleButton.style.display = 'flex';
-    }
   });
-  // Close buttons in both screens
   chatContainer.querySelectorAll('.close-button').forEach((btn) => {
     btn.addEventListener('click', () => {
       chatContainer.classList.remove('open');
-      // Show the launcher toggle again when the chat is closed
-      toggleButton.style.display = 'flex';
     });
   });
 })();
