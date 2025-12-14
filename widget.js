@@ -454,6 +454,8 @@
       chatContainer.querySelector('.brand-header').style.display = 'none';
       chatContainer.querySelector('.new-conversation').style.display = 'none';
       chatInterface.classList.add('active');
+      // Hide the launcher toggle once the chat is open to prevent overlap
+      toggleButton.style.display = 'none';
       // Display initial bot message
       const botMsg = document.createElement('div');
       botMsg.className = 'chat-message bot';
@@ -526,12 +528,21 @@
     }
   });
   toggleButton.addEventListener('click', () => {
+    // Toggle the chat container open/close
     chatContainer.classList.toggle('open');
+    // Hide the launcher button when the chat is open so it doesn't overlap the chat interface
+    if (chatContainer.classList.contains('open')) {
+      toggleButton.style.display = 'none';
+    } else {
+      toggleButton.style.display = 'flex';
+    }
   });
   // Close buttons in both screens
   chatContainer.querySelectorAll('.close-button').forEach((btn) => {
     btn.addEventListener('click', () => {
       chatContainer.classList.remove('open');
+      // Show the launcher toggle again when the chat is closed
+      toggleButton.style.display = 'flex';
     });
   });
 })();
