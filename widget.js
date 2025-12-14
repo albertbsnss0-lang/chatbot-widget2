@@ -1,17 +1,12 @@
-// iClean AZ custom chat widget script (final updated version)
+// iClean AZ custom chat widget script (auto‑scroll fix version)
+// This script updates the previous final version by ensuring the chat window
+// always scrolls to the latest message and keeps the launcher anchored
+// bottom‑right with higher CSS specificity. All other features from the
+// final version remain unchanged.
 (function () {
   /*
    * This script customises the default n8n chat widget to match the iClean AZ brand.
-   * It incorporates all requested design changes in one place.
-   *
-   * Key features implemented:
-   *  - Navy/white colour palette with light grey neutrals.
-   *  - Poppins font throughout.
-   *  - Redesigned launcher with text, badge, and subtle pulse animation.
-   *  - Responsive layout: fixed width on desktop, full width and 80% height on mobile.
-   *  - Enhanced header with title and subtitle.
-   *  - Bot/user message styling with quick reply chip support.
-   *  - Auto-scroll to latest message and typing indicator while waiting for responses.
+   * It incorporates all requested design changes and fixes auto‑scrolling.
    */
 
   const styles = `
@@ -56,7 +51,6 @@
       display: flex;
       flex-direction: column;
     }
-    /* Mobile full-screen */
     @media (max-width: 600px) {
       .n8n-chat-widget .chat-container {
         width: 100%;
@@ -117,7 +111,7 @@
       opacity: 1;
     }
 
-    /* New conversation section */
+    /* New conversation screen */
     .n8n-chat-widget .new-conversation {
       position: absolute;
       top: 50%;
@@ -192,7 +186,7 @@
       color: var(--chat--color-font);
       align-self: flex-start;
     }
-    /* Quick reply chips inside bot messages */
+    /* Quick reply chips within bot messages */
     .n8n-chat-widget .chat-message.bot button {
       background: #F3F5F7;
       border: 1px solid #D9DEE5;
@@ -230,11 +224,11 @@
       font-size: 14px;
     }
 
-    /* Launcher (toggle button) */
+    /* Launcher button */
     .n8n-chat-widget .chat-toggle {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
+      position: fixed !important;
+      bottom: 20px !important;
+      right: 20px !important;
       height: 60px;
       padding: 0 24px;
       border-radius: 999px;
@@ -247,30 +241,27 @@
       gap: 10px;
       box-shadow: 0 10px 30px rgba(11, 31, 59, 0.35);
       z-index: 1000;
-      position: relative; /* for badge positioning */
-      animation: launcherPulse 12s infinite; /* subtle pulse */
+      position: relative;
+      animation: launcherPulse 12s infinite;
     }
     @media (max-width: 600px) {
       .n8n-chat-widget .chat-toggle {
-        bottom: 20px;
-        right: 20px;
+        bottom: 20px !important;
+        right: 20px !important;
         height: 56px;
         padding: 0 20px;
       }
     }
-    /* Launcher icon */
     .n8n-chat-widget .launcher-icon {
       width: 22px;
       height: 22px;
       fill: currentColor;
     }
-    /* Launcher text */
     .n8n-chat-widget .launcher-text {
       font-size: 15px;
       font-weight: 600;
       white-space: nowrap;
     }
-    /* Launcher badge */
     .n8n-chat-widget .launcher-badge {
       position: absolute;
       top: -6px;
@@ -403,7 +394,7 @@
     <span class="launcher-text">Get a Free Quote</span>
   `;
 
-  // Append the chat container and toggle button to the widget container and then to the body
+  // Append chat container and toggle button to widget container and then to body
   widgetContainer.appendChild(chatContainer);
   widgetContainer.appendChild(toggleButton);
   document.body.appendChild(widgetContainer);
@@ -435,7 +426,13 @@
     return typing;
   }
 
-  // Start a new conversation: call the webhook to load previous session (if any) and display first message
+  // Observe message container for new messages and auto-scroll on change
+  const observer = new MutationObserver(() => {
+    scrollToBottom();
+  });
+  observer.observe(messagesContainer, { childList: true });
+
+  // Start a new conversation: call the webhook and display first message
   async function startNewConversation() {
     currentSessionId = generateUUID();
     const payload = [
