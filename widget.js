@@ -1,13 +1,17 @@
-// iClean AZ custom chat widget script (complete updated version)
+// iClean AZ custom chat widget script (final updated version)
 (function () {
   /*
    * This script customises the default n8n chat widget to match the iClean AZ brand.
-   * Key changes:
-   *  - Primary/secondary colours set to navy (#0B1F3B) with white background.
-   *  - Poppins font loaded and applied globally.
-   *  - Bot and user message styling adjusted for light/dark backgrounds.
-   *  - Launcher button redesigned to include text ("Get a Free Quote") and a green badge ("Online").
-   *  - Pointer-events fixed so the badge does not block clicks.
+   * It incorporates all requested design changes in one place.
+   *
+   * Key features implemented:
+   *  - Navy/white colour palette with light grey neutrals.
+   *  - Poppins font throughout.
+   *  - Redesigned launcher with text, badge, and subtle pulse animation.
+   *  - Responsive layout: fixed width on desktop, full width and 80% height on mobile.
+   *  - Enhanced header with title and subtitle.
+   *  - Bot/user message styling with quick reply chip support.
+   *  - Auto-scroll to latest message and typing indicator while waiting for responses.
    */
 
   const styles = `
@@ -19,6 +23,13 @@
       font-family: 'Poppins', sans-serif;
     }
 
+    /* Keyframes for subtle pulse animation on the launcher */
+    @keyframes launcherPulse {
+      0%   { box-shadow: 0 10px 30px rgba(11, 31, 59, 0.35); }
+      50%  { box-shadow: 0 12px 36px rgba(11, 31, 59, 0.45); transform: translateY(-1px); }
+      100% { box-shadow: 0 10px 30px rgba(11, 31, 59, 0.35); }
+    }
+
     /* Chat container */
     .n8n-chat-widget .chat-container {
       position: fixed;
@@ -26,8 +37,10 @@
       right: 20px;
       z-index: 1000;
       display: none;
-      width: 380px;
+      width: 400px;
+      max-width: 420px;
       height: 600px;
+      max-height: 80vh;
       background: var(--chat--color-background);
       border-radius: 12px;
       box-shadow: 0 8px 32px rgba(11, 31, 59, 0.15);
@@ -43,6 +56,17 @@
       display: flex;
       flex-direction: column;
     }
+    /* Mobile full-screen */
+    @media (max-width: 600px) {
+      .n8n-chat-widget .chat-container {
+        width: 100%;
+        height: 80vh;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: 0;
+      }
+    }
 
     /* Header */
     .n8n-chat-widget .brand-header {
@@ -50,17 +74,28 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      border-bottom: 1px solid rgba(11, 31, 59, 0.1);
+      background: var(--chat--color-primary);
+      color: #FFFFFF;
       position: relative;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
     .n8n-chat-widget .brand-header img {
       width: 32px;
       height: 32px;
     }
-    .n8n-chat-widget .brand-header span {
+    .n8n-chat-widget .title-block {
+      display: flex;
+      flex-direction: column;
+    }
+    .n8n-chat-widget .brand-title {
       font-size: 18px;
+      font-weight: 600;
+      color: #FFFFFF;
+    }
+    .n8n-chat-widget .brand-subtitle {
+      font-size: 12px;
       font-weight: 500;
-      color: var(--chat--color-font);
+      color: #C7D4E3;
     }
     .n8n-chat-widget .close-button {
       position: absolute;
@@ -69,7 +104,7 @@
       transform: translateY(-50%);
       background: none;
       border: none;
-      color: var(--chat--color-font);
+      color: #FFFFFF;
       cursor: pointer;
       padding: 4px;
       display: flex;
@@ -82,7 +117,7 @@
       opacity: 1;
     }
 
-    /* New conversation prompt */
+    /* New conversation section */
     .n8n-chat-widget .new-conversation {
       position: absolute;
       top: 50%;
@@ -144,6 +179,7 @@
       max-width: 80%;
       font-size: 14px;
       line-height: 1.5;
+      word-break: break-word;
     }
     .n8n-chat-widget .chat-message.user {
       background: var(--chat--color-primary);
@@ -155,6 +191,18 @@
       border: 1px solid #D9DEE5;
       color: var(--chat--color-font);
       align-self: flex-start;
+    }
+    /* Quick reply chips inside bot messages */
+    .n8n-chat-widget .chat-message.bot button {
+      background: #F3F5F7;
+      border: 1px solid #D9DEE5;
+      color: var(--chat--color-font);
+      padding: 6px 12px;
+      border-radius: 8px;
+      margin-right: 8px;
+      margin-bottom: 4px;
+      font-size: 14px;
+      cursor: pointer;
     }
     .n8n-chat-widget .chat-input {
       padding: 16px;
@@ -188,7 +236,7 @@
       bottom: 20px;
       right: 20px;
       height: 60px;
-      padding: 0 22px;
+      padding: 0 24px;
       border-radius: 999px;
       background: var(--chat--color-primary);
       color: #FFFFFF;
@@ -199,8 +247,16 @@
       gap: 10px;
       box-shadow: 0 10px 30px rgba(11, 31, 59, 0.35);
       z-index: 1000;
-      position: relative; /* relative for badge positioning */
-      pointer-events: auto; /* ensure button itself is clickable */
+      position: relative; /* for badge positioning */
+      animation: launcherPulse 12s infinite; /* subtle pulse */
+    }
+    @media (max-width: 600px) {
+      .n8n-chat-widget .chat-toggle {
+        bottom: 20px;
+        right: 20px;
+        height: 56px;
+        padding: 0 20px;
+      }
     }
     /* Launcher icon */
     .n8n-chat-widget .launcher-icon {
@@ -226,7 +282,7 @@
       padding: 4px 8px;
       border-radius: 999px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-      pointer-events: none; /* badge doesn’t capture clicks */
+      pointer-events: none;
     }
   `;
 
@@ -250,6 +306,8 @@
     branding: {
       logo: '',
       name: '',
+      title: '',
+      subtitle: '',
       welcomeText: '',
       responseTimeText: ''
     },
@@ -271,7 +329,7 @@
       }
     : defaultConfig;
 
-  // Avoid multiple initializations
+  // Avoid multiple initialisations
   if (window.N8NChatWidgetInitialized) return;
   window.N8NChatWidgetInitialized = true;
 
@@ -293,7 +351,10 @@
   const newConversationHTML = `
     <div class="brand-header">
       <img src="${config.branding.logo}" alt="${config.branding.name}">
-      <span>${config.branding.name}</span>
+      <div class="title-block">
+        <span class="brand-title">${config.branding.title || config.branding.name}</span>
+        <span class="brand-subtitle">${config.branding.subtitle}</span>
+      </div>
       <button class="close-button">×</button>
     </div>
     <div class="new-conversation">
@@ -313,7 +374,10 @@
     <div class="chat-interface">
       <div class="brand-header">
         <img src="${config.branding.logo}" alt="${config.branding.name}">
-        <span>${config.branding.name}</span>
+        <div class="title-block">
+          <span class="brand-title">${config.branding.title || config.branding.name}</span>
+          <span class="brand-subtitle">${config.branding.subtitle}</span>
+        </div>
         <button class="close-button">×</button>
       </div>
       <div class="chat-messages"></div>
@@ -356,6 +420,21 @@
     return crypto.randomUUID();
   }
 
+  // Helper: scroll messages container to bottom
+  function scrollToBottom() {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  // Helper: show typing indicator
+  function showTyping() {
+    const typing = document.createElement('div');
+    typing.className = 'chat-message bot typing';
+    typing.textContent = 'Typing…';
+    messagesContainer.appendChild(typing);
+    scrollToBottom();
+    return typing;
+  }
+
   // Start a new conversation: call the webhook to load previous session (if any) and display first message
   async function startNewConversation() {
     currentSessionId = generateUUID();
@@ -383,6 +462,7 @@
       botMsg.className = 'chat-message bot';
       botMsg.textContent = Array.isArray(responseData) ? responseData[0].output : responseData.output;
       messagesContainer.appendChild(botMsg);
+      scrollToBottom();
     } catch (err) {
       console.error('Error starting conversation:', err);
     }
@@ -402,6 +482,9 @@
     userMsg.className = 'chat-message user';
     userMsg.textContent = message;
     messagesContainer.appendChild(userMsg);
+    scrollToBottom();
+    // Show typing indicator
+    const typingIndicator = showTyping();
     try {
       const response = await fetch(config.webhook.url, {
         method: 'POST',
@@ -409,12 +492,20 @@
         body: JSON.stringify(payload)
       });
       const data = await response.json();
+      // Remove typing indicator
+      messagesContainer.removeChild(typingIndicator);
+      // Display bot message
       const botMsg = document.createElement('div');
       botMsg.className = 'chat-message bot';
       botMsg.textContent = Array.isArray(data) ? data[0].output : data.output;
       messagesContainer.appendChild(botMsg);
+      scrollToBottom();
     } catch (err) {
       console.error('Error sending message:', err);
+      // Remove typing if still present
+      if (typingIndicator.parentElement) {
+        messagesContainer.removeChild(typingIndicator);
+      }
     }
   }
 
