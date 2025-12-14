@@ -187,21 +187,60 @@
         }
 
         .n8n-chat-widget .chat-toggle {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            border-radius: 30px;
-            background: linear-gradient(135deg, var(--chat--color-primary) 0%, var(--chat--color-secondary) 100%);
-            color: white;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(133, 79, 255, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+
+    height: 60px;
+    padding: 0 22px;
+    border-radius: 999px;
+
+    background: var(--chat--color-primary);
+    color: #ffffff;
+
+    border: none;
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    box-shadow: 0 10px 30px rgba(11, 31, 59, 0.35);
+    z-index: 1000;
+}
+
+/* Launcher icon */
+.n8n-chat-widget .launcher-icon {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+}
+
+/* Launcher text */
+.n8n-chat-widget .launcher-text {
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Online badge */
+.n8n-chat-widget .launcher-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+
+    background: #16a34a;
+    color: #ffffff;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    padding: 4px 8px;
+    border-radius: 999px;
+
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
     `;
 
     // Load font
@@ -418,4 +457,5 @@ toggleButton.innerHTML = `
     );
 
 })();
+
 
