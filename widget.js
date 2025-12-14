@@ -217,8 +217,10 @@
     /* Launcher */
     .n8n-chat-widget .chat-toggle {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 20px !important;
+      right: 20px !important;
+      top: auto !important;
+      left: auto !important;
       height: 60px;
       padding: 0 24px;
       border-radius: 999px;
